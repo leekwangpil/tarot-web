@@ -52,35 +52,68 @@ export default function Home() {
     }
   };
 
-  const handleCopy = () => {
-    const cardText = selectedCards
-      .map((card, i) => `${i + 1}. ${card.name}`)
-      .join('\n');
-    const textToCopy = `[뽑힌 카드]\n${cardText}\n\n[해석 결과]\n${reading}`;
-    navigator.clipboard.writeText(textToCopy);
-    alert('타로 해석 결과가 복사되었습니다!');
+  const handleCopyText = () => {
+    const cardText = selectedCards.map((card) => card.name).join(', ');
+    const textToCopy = `[뽑은 카드]\n${cardText}\n\n[해석 결과]\n${reading}`;
+
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        alert('텍스트가 복사되었습니다!');
+      })
+      .catch(() => {
+        alert('텍스트 복사에 실패했습니다.');
+      });
   };
 
-  const handleCaptureAndCopy = async () => {
-    if (!captureRef.current) return;
+  const handleCopyImage = async () => {
+    const element = document.getElementById('result');
+    if (!element) return;
 
     try {
-      const canvas = await html2canvas(captureRef.current);
-      canvas.toBlob(async (blob) => {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+      });
+
+      canvas.toBlob((blob) => {
         if (blob) {
-          try {
-            await navigator.clipboard.write([
-              new ClipboardItem({ 'image/png': blob }),
-            ]);
-            alert('이미지로 복사되었습니다!');
-          } catch (err) {
-            alert('복사 실패 😢 브라우저가 이미지를 지원하지 않아요.');
-          }
+          navigator.clipboard
+            .write([new ClipboardItem({ 'image/png': blob })])
+            .then(() => {
+              alert('이미지가 복사되었습니다!');
+            })
+            .catch(() => {
+              alert('이미지 복사가 지원되지 않는 환경입니다.');
+            });
         }
       });
-    } catch (err) {
-      alert('이미지 캡처 중 오류가 발생했습니다.');
-      console.error('Capture error:', err);
+    } catch (error) {
+      console.error('이미지 복사 중 오류:', error);
+      alert('이미지 복사에 실패했습니다.');
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    const element = document.getElementById('result');
+    if (!element) return;
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+      });
+      const image = canvas.toDataURL('image/png');
+
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = 'tarot-reading.png';
+      link.click();
+    } catch (error) {
+      console.error('이미지 저장 중 오류:', error);
+      alert('이미지 저장에 실패했습니다.');
     }
   };
 
@@ -127,6 +160,7 @@ export default function Home() {
           <>
             <div
               ref={captureRef}
+              id="result"
               className="mt-8 p-10 rounded-3xl"
               style={{
                 backgroundImage: "url('/bg.png')",
@@ -179,18 +213,57 @@ export default function Home() {
             </div>
 
             {reading && (
-              <div className="flex gap-4 justify-center mt-6 flex-wrap">
+              <div className="flex flex-wrap justify-center gap-3 mt-6">
                 <button
-                  onClick={handleCopy}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-base font-medium"
+                  onClick={handleCopyText}
+                  className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-lg"
                 >
-                  📋 텍스트 복사
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                  텍스트 복사
                 </button>
                 <button
-                  onClick={handleCaptureAndCopy}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-base font-medium"
+                  onClick={handleCopyImage}
+                  className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2 shadow-lg"
                 >
-                  📸 이미지 복사
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  이미지 복사
+                </button>
+                <button
+                  onClick={handleDownloadImage}
+                  className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2 shadow-lg"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  이미지 저장
                 </button>
               </div>
             )}
